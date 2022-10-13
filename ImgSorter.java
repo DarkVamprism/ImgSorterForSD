@@ -27,8 +27,37 @@ import javax.swing.SwingConstants;
 
 import javax.swing.JOptionPane;
 
+/*
+  How To!
+  Press File and choose a folder that has images, for example ./stable-diffusion-webui/outputs
+  ImgSorter will look inside all subdirectories(so dont select any folder with too many images!)
+  for images and display the first, when you choose an option the image will move to either
+  ./SortedImages/Keep, ./SortedImages/Maybe or ./SortedImages/Exclude
+  To send the current image to:
+  Keep, press 1 or numpad1,
+  Maybe, press 2 or numpad2,
+  Exclude press 3 or numpad3
 
+  If you make a mistake and want to go back, press 4 or numpad4
+
+  The program will remember the last selected project folder
+ */
 public class ImgSorter extends JFrame implements ActionListener {
+  public final static class EventTriggered {
+    public static final int KEEPIMAGE = 0;
+    public static final int MAYBEIMAGE = 1;
+    public static final int EXCLUDEIMAGE = 2;
+    public static final int GOBACK = 3;
+  }
+
+  public static String mainFolder = "./SortedImages/";
+
+  public static String keepFolder = mainFolder + "Keep/";
+  public static String maybeFolder = mainFolder + "Maybe/";
+  public static String excludeFolder = mainFolder + "Exclude/";
+
+  public static String openedFolder;
+
   private JLabel label;
   private JMenuItem openItem;
   private JMenuItem exitItem;
@@ -37,10 +66,6 @@ public class ImgSorter extends JFrame implements ActionListener {
   private JButton btnMaybe;
   private JButton btnExclude;
   private JButton btnBack;
-
-  public static String keepFolder = "./Images/Keep/";
-  public static String maybeFolder = "./Images/Maybe/";
-  public static String excludeFolder = "./Images/Exclude/";
 
   public static ArrayList<ImgObj> imgList;
   public static int curImgIndex;
@@ -81,10 +106,10 @@ public class ImgSorter extends JFrame implements ActionListener {
     btnExclude = new JButton("Exclude");
     btnBack = new JButton("Back");
 
-    btnKeep.addActionListener(e -> processImage(0));
-    btnMaybe.addActionListener(e -> processImage(1));
-    btnExclude.addActionListener(e -> processImage(2));
-    btnBack.addActionListener(e -> processImage(3));
+    btnKeep.addActionListener(e -> processImage(EventTriggered.KEEPIMAGE));
+    btnMaybe.addActionListener(e -> processImage(EventTriggered.MAYBEIMAGE));
+    btnExclude.addActionListener(e -> processImage(EventTriggered.EXCLUDEIMAGE));
+    btnBack.addActionListener(e -> processImage(EventTriggered.GOBACK));
 
     setupHotkeys(btnKeep, KeyEvent.VK_1, KeyEvent.VK_NUMPAD1);
     setupHotkeys(btnMaybe, KeyEvent.VK_2, KeyEvent.VK_NUMPAD2);
@@ -145,17 +170,21 @@ public class ImgSorter extends JFrame implements ActionListener {
   }
 
   private void processImage(int choice) {
+    if(imgList == null)
+      return;
+
     switch(choice) {
-      case 0:
+      case EventTriggered.KEEPIMAGE:
         imgList.get(curImgIndex).moveToKeep();
         break;
-      case 1:
+      case EventTriggered.MAYBEIMAGE:
         imgList.get(curImgIndex).moveToMaybe();
         break;
-      case 2:
+      case EventTriggered.EXCLUDEIMAGE:
         imgList.get(curImgIndex).moveToExcluded();
         break;
       default:
+        //EventTriggered.GOBACK
         curImgIndex -= 2;
     }
 
@@ -207,6 +236,8 @@ public class ImgSorter extends JFrame implements ActionListener {
         FileWriter myWriter = new FileWriter(configFile.getAbsolutePath());
         myWriter.write(file.getAbsolutePath());
         myWriter.close();
+
+        openedFolder = file.getAbsolutePath();
       } catch (IOException e) {
         System.out.println("An error occurred.");
         e.printStackTrace();
@@ -249,12 +280,14 @@ public class ImgSorter extends JFrame implements ActionListener {
       }
   }
 
+  // This code is also by HenryLoenwind
   private static void setupHotkeys(JButton button, int... keys) {
     for (int key : keys) {
       button.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke(key, 0), "click");
     }
     button.getActionMap().put("click", CLICK_ACTION);
   }
+  // **********************************
 
   public static void main(String[] args) {
     JFrame frame = new ImgSorter();
@@ -290,8 +323,9 @@ public class ImgSorter extends JFrame implements ActionListener {
 
     void moveTo(String newFolder) {
       try {
-        File movedFile = new File(newFolder + file.getName());
-        Files.createDirectories(Paths.get(newFolder));
+        String relativePathFromOpened = file.getAbsolutePath().replace(openedFolder, "");
+        File movedFile = new File(newFolder + relativePathFromOpened);
+        Files.createDirectories(Paths.get(movedFile.getAbsolutePath()).getParent());
         file.renameTo(movedFile);
         file = movedFile;
       } catch(IOException e) {
