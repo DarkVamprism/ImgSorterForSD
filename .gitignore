@@ -24,3 +24,19 @@ lastOpenedFolder.txt
 
 # virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
 hs_err_pid*
+
+# Ignore Gradle project-specific cache directory
+.gradle
+
+# Ignore Gradle build output directory
+build
+
+.settings/
+
+bin/
+
+.classpath
+
+**/.DS_Store
+
+.project
