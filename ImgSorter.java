@@ -296,6 +296,7 @@ public class ImgSorter extends JFrame implements ActionListener {
 
   public static class ImgObj {
     File file;
+    String relativePathFromOpened;
 
     public ImgObj(File fileIn) {
       file = fileIn;
@@ -323,7 +324,10 @@ public class ImgSorter extends JFrame implements ActionListener {
 
     void moveTo(String newFolder) {
       try {
-        String relativePathFromOpened = file.getAbsolutePath().replace(openedFolder, "");
+        if(relativePathFromOpened == null) {
+          relativePathFromOpened = file.getAbsolutePath().replace(openedFolder, "");
+        }
+
         File movedFile = new File(newFolder + relativePathFromOpened);
         Files.createDirectories(Paths.get(movedFile.getAbsolutePath()).getParent());
         file.renameTo(movedFile);
